@@ -1,0 +1,103 @@
+---
+title: "677 Assignment 1"
+author: "Haoyu Li"
+date: "2021/2/11"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+```
+
+First, we calculate the alpha value, which is the probability of type 1 error. In the case that the textbbok mentioned, p=0.6 when m=60 people have been cured, and the total number of people are n=100. The probability function is writen as $$\alpha(p)=\sum_{m\le{k}\le{n}}b(n,p,k)=\sum_{60\le{k}\le{100}}b(100,0.6,k)$$
+```{r}
+# alpha when p=0.6
+m1=rep(0,times=40)
+P1=rep(0,times=40)
+for(i in 0:40){
+  m1[i]=i+60
+  P1[i]=pbinom(q=100,size=100,prob=0.6)-pbinom(q=m1[i]-1,size=100,prob=0.6)
+}
+a=data.frame(cbind(m1,P1))
+```
+
+Next, we calculate the probability of type 2 error, which is beta value. The probability function can be writen as the function of alpha, since beta value = 1 - alpha value. In this case, p=0.8 when m=80 people have been cured
+```{r}
+m2=rep(0,times=20)
+P2=rep(0,times=20)
+for(i in 0:20){
+  m2[i]=80-i
+  P2[i]=pbinom(q=m2[i]-1,size=100,prob=0.8)
+}
+b=data.frame(cbind(m2,P2))
+```
+
+Now, we apply the criteria that alpha and beta value are less than 0.05 to filter out the value for m
+```{r}
+m_a=a[which(a$P1<0.05),1]
+min(m_a)
+m_b=b[which(b$P2<0.05),1]
+max(m_b)
+intersect(m_a,m_b)
+```
+
+Thus, we get the minimum m value for 69, which can make the alpha value less likely and m value for 73 which can make the beta value less likely.
+
+## power curve
+write a program PowerCurve to plot, for n = 100 and selected values of m,
+the function alpha(p), for p ranging from .4 to 1.
+
+For the x-axis, this is the probability that new drug is effective.
+```{r}
+p=seq(from=0.4,to=1,length=100)
+```
+
+For the y-axis, that is the probability of the type 1 error
+```{r}
+#when m=69
+alpha1=rep(0,times=length((p)))
+for(i in 1:100){
+  alpha1[i]=pbinom(q=100,size=100,prob=p[i])-pbinom(q=68,size=100,prob=p[i])
+}
+```
+
+```{r}
+#for m=73
+alpha2=rep(0,times=length((p)))
+for(i in 1:100){
+  alpha2[i]=pbinom(q=100,size=100,prob=p[i])-pbinom(q=72,size=100,prob=p[i])
+}
+``` 
+
+We combine alpha1 and alpha2
+```{r}
+type_error=data.frame(cbind(p,alpha1,alpha2))
+```
+
+Now we can plot our curve
+```{r}
+powercurve=ggplot(data=type_error,mapping=aes(x=p))+
+  geom_line(mapping=aes(y=alpha1))+
+  geom_line(mapping=aes(y=alpha2))+
+  labs(x="p",y="a(p)",title="The power curve")+
+  theme(title=element_text(hjust=0.5,size=10))
+powercurve
+```
+
+Finally, we add the box which range from 0.05 to 0.95
+```{r}
+powercurve+
+  geom_segment(mapping=aes(x=0.6,xend=0.8,y=0.05,yend=0.05))+
+  geom_segment(mapping=aes(x=0.6,xend=0.8,y=0.95,yend=0.95))+
+  geom_segment(mapping=aes(x=0.6,xend=0.6,y=0.05,yend=0.95))+
+  geom_segment(mapping=aes(x=0.8,xend=0.8,y=0.05,yend=0.95))
+```
+
+Note: I collaborate with yuxin zeng to finish this assignment.
+
+
+
+
